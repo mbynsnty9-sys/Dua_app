@@ -9,167 +9,134 @@ import android.graphics.drawable.*;
 import android.net.Uri;
 import android.provider.OpenableColumns;
 import android.view.*;
-import android.view.inputmethod.InputMethodManager;
+import android.view.animation.*;
 import android.widget.*;
 import android.media.MediaPlayer;
-import org.json.*;
 import java.io.*;
 import java.util.*;
 
 public class MainActivity extends Activity {
-  final int forest=0xff173d34, forest2=0xff245b4b, gold=0xffb99250, paper=0xfff7f4ec, ink=0xff33332f;
-  final int PICK_AUDIO=10, PICK_FONT=11, PICK_IMAGE=12;
-  ArrayList<Dua> duas=new ArrayList<>();
+  final int forest=0xff123b32, forest2=0xff1d5949, gold=0xffc5a36a, cream=0xfff7f3e9, ink=0xff35352f;
+  final int PICK_AUDIO=10, PICK_ARABIC_FONT=11, PICK_PERSIAN_FONT=12;
   LinearLayout page;
   MediaPlayer player;
-  Typeface arabicTypeface=Typeface.create("serif",Typeface.NORMAL);
+  Typeface arabicFont=Typeface.create("serif",0), persianFont=Typeface.create("sans-serif",0);
   String defaultAudio="";
   int selected=-1;
   boolean auto=false;
   Handler handler=new Handler();
+  final String[] titles={"دعای فرج","دعای عهد"};
+  final String[] subtitles={"اللهم کن لولیک الحجة بن الحسن","تجدید پیمان با امام زمان (عج)"};
 
-  static class Dua {
-    String id,title,category,arabic,persian,audio,image;
-    Dua(String t,String c,String a,String p){id=UUID.randomUUID().toString();title=t;category=c;arabic=a;persian=p;audio="";image="";}
-    JSONObject json() throws Exception {JSONObject o=new JSONObject();o.put("id",id);o.put("title",title);o.put("category",category);o.put("arabic",arabic);o.put("persian",persian);o.put("audio",audio);o.put("image",image);return o;}
-    static Dua from(JSONObject o){Dua d=new Dua(o.optString("title"),o.optString("category"),o.optString("arabic"),o.optString("persian"));d.id=o.optString("id",d.id);d.audio=o.optString("audio");d.image=o.optString("image");return d;}
-  }
+  final String[][] ar={
+    {
+      "اللَّهُمَّ كُنْ لِوَلِيِّكَ الْحُجَّةِ بْنِ الْحَسَنِ، صَلَوَاتُكَ عَلَيْهِ وَعَلَى آبَائِهِ،",
+      "فِي هَذِهِ السَّاعَةِ وَفِي كُلِّ سَاعَةٍ، وَلِيًّا وَحَافِظًا، وَقَائِدًا وَنَاصِرًا، وَدَلِيلًا وَعَيْنًا،",
+      "حَتَّى تُسْكِنَهُ أَرْضَكَ طَوْعًا، وَتُمَتِّعَهُ فِيهَا طَوِيلًا."
+    },
+    {
+      "اللَّهُمَّ رَبَّ النُّورِ الْعَظِيمِ، وَرَبَّ الْكُرْسِيِّ الرَّفِيعِ، وَرَبَّ الْبَحْرِ الْمَسْجُورِ، وَمُنْزِلَ التَّوْرَاةِ وَالْإِنْجِيلِ وَالزَّبُورِ، وَرَبَّ الظِّلِّ وَالْحَرُورِ، وَمُنْزِلَ الْقُرْآنِ الْعَظِيمِ، وَرَبَّ الْمَلَائِكَةِ الْمُقَرَّبِينَ، وَالْأَنْبِيَاءِ وَالْمُرْسَلِينَ.",
+      "اللَّهُمَّ إِنِّي أَسْأَلُكَ بِوَجْهِكَ الْكَرِيمِ، وَبِنُورِ وَجْهِكَ الْمُنِيرِ، وَمُلْكِكَ الْقَدِيمِ، يَا حَيُّ يَا قَيُّومُ، أَسْأَلُكَ بِاسْمِكَ الَّذِي أَشْرَقَتْ بِهِ السَّمَاوَاتُ وَالْأَرَضُونَ، وَبِاسْمِكَ الَّذِي يَصْلُحُ بِهِ الْأَوَّلُونَ وَالْآخِرُونَ، يَا حَيًّا قَبْلَ كُلِّ حَيٍّ، وَيَا حَيًّا بَعْدَ كُلِّ حَيٍّ، وَيَا حَيًّا حِينَ لَا حَيَّ، يَا مُحْيِيَ الْمَوْتَى وَمُمِيتَ الْأَحْيَاءِ، يَا حَيُّ لَا إِلَهَ إِلَّا أَنْتَ.",
+      "اللَّهُمَّ بَلِّغْ مَوْلَانَا الْإِمَامَ الْهَادِيَ الْمَهْدِيَّ الْقَائِمَ بِأَمْرِكَ، صَلَوَاتُ اللَّهِ عَلَيْهِ وَعَلَى آبَائِهِ الطَّاهِرِينَ، عَنْ جَمِيعِ الْمُؤْمِنِينَ وَالْمُؤْمِنَاتِ فِي مَشَارِقِ الْأَرْضِ وَمَغَارِبِهَا، سَهْلِهَا وَجَبَلِهَا، وَبَرِّهَا وَبَحْرِهَا، وَعَنِّي وَعَنْ وَالِدَيَّ مِنَ الصَّلَوَاتِ زِنَةَ عَرْشِ اللَّهِ وَمِدَادَ كَلِمَاتِهِ، وَمَا أَحْصَاهُ عِلْمُهُ وَأَحَاطَ بِهِ كِتَابُهُ.",
+      "اللَّهُمَّ إِنِّي أُجَدِّدُ لَهُ فِي صَبِيحَةِ يَوْمِي هَذَا وَمَا عِشْتُ مِنْ أَيَّامِي عَهْدًا وَعَقْدًا وَبَيْعَةً لَهُ فِي عُنُقِي، لَا أَحُولُ عَنْهَا وَلَا أَزُولُ أَبَدًا. اللَّهُمَّ اجْعَلْنِي مِنْ أَنْصَارِهِ وَأَعْوَانِهِ، وَالذَّابِّينَ عَنْهُ، وَالْمُسَارِعِينَ إِلَيْهِ فِي قَضَاءِ حَوَائِجِهِ، وَالْمُمْتَثِلِينَ لِأَوَامِرِهِ، وَالْمُحَامِينَ عَنْهُ، وَالسَّابِقِينَ إِلَى إِرَادَتِهِ، وَالْمُسْتَشْهَدِينَ بَيْنَ يَدَيْهِ.",
+      "اللَّهُمَّ إِنْ حَالَ بَيْنِي وَبَيْنَهُ الْمَوْتُ الَّذِي جَعَلْتَهُ عَلَى عِبَادِكَ حَتْمًا مَقْضِيًّا، فَأَخْرِجْنِي مِنْ قَبْرِي مُؤْتَزِرًا كَفَنِي، شَاهِرًا سَيْفِي، مُجَرِّدًا قَنَاتِي، مُلَبِّيًا دَعْوَةَ الدَّاعِي فِي الْحَاضِرِ وَالْبَادِي.",
+      "اللَّهُمَّ أَرِنِي الطَّلْعَةَ الرَّشِيدَةَ، وَالْغُرَّةَ الْحَمِيدَةَ، وَاكْحُلْ نَاظِرِي بِنَظْرَةٍ مِنِّي إِلَيْهِ، وَعَجِّلْ فَرَجَهُ، وَسَهِّلْ مَخْرَجَهُ، وَأَوْسِعْ مَنْهَجَهُ، وَاسْلُكْ بِي مَحَجَّتَهُ، وَأَنْفِذْ أَمْرَهُ، وَاشْدُدْ أَزْرَهُ، وَاعْمُرِ اللَّهُمَّ بِهِ بِلَادَكَ، وَأَحْيِ بِهِ عِبَادَكَ.",
+      "فَإِنَّكَ قُلْتَ وَقَوْلُكَ الْحَقُّ: ظَهَرَ الْفَسَادُ فِي الْبَرِّ وَالْبَحْرِ بِمَا كَسَبَتْ أَيْدِي النَّاسِ، فَأَظْهِرِ اللَّهُمَّ لَنَا وَلِيَّكَ وَابْنَ بِنْتِ نَبِيِّكَ، الْمُسَمَّى بِاسْمِ رَسُولِكَ، حَتَّى لَا يَظْفَرَ بِشَيْءٍ مِنَ الْبَاطِلِ إِلَّا مَزَّقَهُ، وَيُحِقَّ الْحَقَّ وَيُحَقِّقَهُ.",
+      "وَاجْعَلْهُ اللَّهُمَّ مَفْزَعًا لِمَظْلُومِ عِبَادِكَ، وَنَاصِرًا لِمَنْ لَا يَجِدُ لَهُ نَاصِرًا غَيْرَكَ، وَمُجَدِّدًا لِمَا عُطِّلَ مِنْ أَحْكَامِ كِتَابِكَ، وَمُشَيِّدًا لِمَا وَرَدَ مِنْ أَعْلَامِ دِينِكَ وَسُنَنِ نَبِيِّكَ صَلَّى اللَّهُ عَلَيْهِ وَآلِهِ، وَاجْعَلْهُ اللَّهُمَّ مِمَّنْ حَصَّنْتَهُ مِنْ بَأْسِ الْمُعْتَدِينَ.",
+      "اللَّهُمَّ وَسُرَّ نَبِيَّكَ مُحَمَّدًا صَلَّى اللَّهُ عَلَيْهِ وَآلِهِ بِرُؤْيَتِهِ، وَمَنْ تَبِعَهُ عَلَى دَعْوَتِهِ، وَارْحَمِ اسْتِكَانَتَنَا بَعْدَهُ. اللَّهُمَّ اكْشِفْ هَذِهِ الْغُمَّةَ عَنْ هَذِهِ الْأُمَّةِ بِحُضُورِهِ، وَعَجِّلْ لَنَا ظُهُورَهُ، إِنَّهُمْ يَرَوْنَهُ بَعِيدًا وَنَرَاهُ قَرِيبًا، بِرَحْمَتِكَ يَا أَرْحَمَ الرَّاحِمِينَ."
+    }
+  };
 
-  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(forest);getWindow().setNavigationBarColor(forest);loadData();showHome();}
-  int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
-  GradientDrawable shape(int c,int r,int stroke){GradientDrawable d=new GradientDrawable();d.setColor(c);d.setCornerRadius(dp(r));if(stroke!=0)d.setStroke(dp(1),stroke);return d;}
-  TextView text(String s,int size,int color,boolean bold){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(color);t.setGravity(Gravity.CENTER_VERTICAL);t.setTextDirection(View.TEXT_DIRECTION_RTL);t.setPadding(dp(14),dp(10),dp(14),dp(10));if(bold)t.setTypeface(Typeface.DEFAULT,Typeface.BOLD);return t;}
-  TextView button(String s){TextView t=text(s,14,Color.WHITE,true);t.setGravity(Gravity.CENTER);t.setBackground(shape(forest2,18,0));return t;}
-  LinearLayout column(){LinearLayout l=new LinearLayout(this);l.setOrientation(1);return l;}
-  LinearLayout row(){LinearLayout l=new LinearLayout(this);l.setOrientation(0);l.setGravity(Gravity.CENTER_VERTICAL);return l;}
-  LinearLayout.LayoutParams lp(int w,int h){return new LinearLayout.LayoutParams(w<0?w:dp(w),h<0?h:dp(h));}
-  LinearLayout.LayoutParams margin(int top,int bottom){LinearLayout.LayoutParams p=lp(-1,-2);p.setMargins(dp(15),dp(top),dp(15),dp(bottom));return p;}
+  final String[][] fa={
+    {
+      "خدایا، برای ولیّ خود، حجّت بن حسن ـ که درودهای تو بر او و پدرانش باد ـ باش؛",
+      "در این ساعت و در هر ساعت، سرپرست و نگهبان، پیشوا و یاور، راهنما و دیده‌بان او باش؛",
+      "تا او را با خشنودی در زمین خود جای دهی و زمانی طولانی در آن بهره‌مند سازی."
+    },
+    {
+      "خدایا، ای پروردگار نور بزرگ، پروردگار کرسی بلندمرتبه و دریای آکنده؛ ای فرستندهٔ تورات و انجیل و زبور، پروردگار سایه و گرمای آفتاب، فرستندهٔ قرآن بزرگ و پروردگار فرشتگان مقرّب و پیامبران و فرستادگان.",
+      "خدایا، از تو به حق ذات کریمت، نور روشنی‌بخش چهره‌ات و فرمانروایی دیرینه‌ات درخواست می‌کنم. ای زنده و برپادارندهٔ هستی! از تو به حق نامی درخواست می‌کنم که آسمان‌ها و زمین‌ها به آن روشن شدند و به حق نامی که پیشینیان و پسینیان به برکت آن سامان می‌یابند. ای زنده پیش از هر زنده، ای زنده پس از هر زنده و ای زنده در آن هنگام که هیچ زنده‌ای نبود؛ ای زنده‌کنندهٔ مردگان و میرانندهٔ زندگان؛ ای زنده‌ای که معبودی جز تو نیست.",
+      "خدایا، درودهایی به مولای ما، امام هدایتگر و مهدیِ قیام‌کننده به فرمانت برسان؛ درود خدا بر او و پدران پاکش باد. این درودها را از سوی همهٔ مردان و زنان باایمان در خاور و باختر زمین، دشت و کوه، خشکی و دریا، و نیز از سوی من و پدر و مادرم قرار ده؛ درودی به وزن عرش خدا و به شمار کلمات او، به اندازهٔ آنچه دانشش احصا کرده و کتابش بر آن احاطه دارد.",
+      "خدایا، در بامداد امروز و در تمام روزهایی که زنده‌ام، پیمان و عهد و بیعت خود را با او تازه می‌کنم؛ پیمانی که بر عهدهٔ من است و هرگز از آن روی نمی‌گردانم و دست برنمی‌دارم. خدایا، مرا از یاوران و پشتیبانان او، دفاع‌کنندگان از او، شتابندگان در برآوردن نیازهایش، فرمان‌برداران اوامر او، حمایت‌کنندگان از او، پیشگامان در انجام خواسته‌اش و آنان که در پیشگاهش به شهادت می‌رسند قرار ده.",
+      "خدایا، اگر مرگی که آن را بر بندگانت حتمی و قطعی قرار داده‌ای میان من و او فاصله انداخت، مرا از قبرم بیرون آور؛ در حالی که کفنم را بر کمر بسته‌ام، شمشیرم آخته و نیزه‌ام آماده است و دعوت آن دعوت‌کننده را در شهر و بیابان لبیک می‌گویم.",
+      "خدایا، آن چهرهٔ هدایتگر و پیشانی ستوده را به من بنمایان و دیدگانم را با نگاهی به سوی او روشن کن. در فرجش شتاب فرما، راه ظهورش را آسان و مسیرش را گسترده ساز، مرا در راه روشن او قرار ده، فرمانش را نافذ گردان و پشتش را استوار ساز؛ خدایا، سرزمین‌هایت را به دست او آباد و بندگانت را به وسیلهٔ او زنده کن.",
+      "زیرا تو گفته‌ای و سخنت حق است: «به سبب آنچه دست‌های مردم فراهم آورده، فساد در خشکی و دریا آشکار شده است». پس خدایا، ولیّ خود و فرزند دختر پیامبرت را که هم‌نام فرستادهٔ توست برای ما آشکار ساز؛ تا با هیچ باطلی روبه‌رو نشود مگر آنکه آن را درهم بشکند و حق را استوار و محقق گرداند.",
+      "خدایا، او را پناه مظلومان از بندگانت و یاور کسی قرار ده که جز تو یاوری نمی‌یابد؛ احیاگر احکامی از کتابت قرار ده که تعطیل شده‌اند و استوارکنندهٔ نشانه‌های دین و سنت‌های پیامبرت؛ و او را از کسانی قرار ده که از گزند تجاوزگران در پناه و حفاظت تو هستند.",
+      "خدایا، پیامبرت محمد ـ درود خدا بر او و خاندانش باد ـ را با دیدار او و پیروان دعوتش شادمان ساز و بر ناتوانی و فروتنی ما پس از او رحم کن. خدایا، این اندوه را با حضور او از این امت برطرف ساز و در ظهورش برای ما شتاب فرما؛ آنان ظهورش را دور می‌بینند و ما آن را نزدیک می‌دانیم. به رحمتت، ای مهربان‌ترین مهربانان."
+    }
+  };
 
-  void loadData(){
-    android.content.SharedPreferences sp=getSharedPreferences("dua_store",0);
-    defaultAudio=sp.getString("default_audio","");
-    String font=sp.getString("font","");
-    if(!font.isEmpty())try{arabicTypeface=Typeface.createFromFile(font);}catch(Exception ignored){}
-    String saved=sp.getString("duas","");
-    if(!saved.isEmpty())try{JSONArray a=new JSONArray(saved);for(int i=0;i<a.length();i++)duas.add(Dua.from(a.getJSONObject(i)));}catch(Exception ignored){}
-    if(duas.isEmpty())seed();
-  }
-  void seed(){
-    addSeed("دعای فرج","امام زمان (عج)","اللَّهُمَّ كُنْ لِوَلِيِّكَ الْحُجَّةِ بْنِ الْحَسَنِ، صَلَوَاتُكَ عَلَيْهِ وَعَلَى آبَائِهِ، فِي هذِهِ السَّاعَةِ وَفِي كُلِّ سَاعَةٍ، وَلِيّاً وَحَافِظاً، وَقَائِداً وَنَاصِراً، وَدَلِيلاً وَعَيْناً، حَتَّى تُسْكِنَهُ أَرْضَكَ طَوْعاً، وَتُمَتِّعَهُ فِيهَا طَوِيلاً.","خدایا، در این ساعت و در همه ساعت‌ها، سرپرست و نگهبان و پیشوا و یاور و راهنمای ولیّ خود، حجت بن الحسن باش؛ تا او را با رغبت در زمینت جای دهی و زمانی طولانی بهره‌مند سازی.");
-    addSeed("صلوات","ذکر روزانه","اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَآلِ مُحَمَّدٍ","خدایا، بر محمد و خاندان محمد درود فرست.");
-    addSeed("استغفار","طلب آمرزش","أَسْتَغْفِرُ اللَّهَ رَبِّي وَأَتُوبُ إِلَيْهِ","از خداوند، پروردگارم، آمرزش می‌خواهم و به سوی او بازمی‌گردم.");
-    addSeed("آیة الکرسی","قرآن کریم","اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ","خداست که معبودی جز او نیست؛ زنده و برپادارنده است. نه خواب سبک او را فرا می‌گیرد و نه خواب سنگین. آنچه در آسمان‌ها و زمین است از آنِ اوست. چه کسی جز به اذن او نزدش شفاعت می‌کند؟ آنچه پیش روی مردم و پشت سرشان است می‌داند و آنان به چیزی از دانش او جز آنچه بخواهد احاطه ندارند.");
-    addSeed("دعای توسل","توسل","اللَّهُمَّ إِنِّي أَسْأَلُكَ وَأَتَوَجَّهُ إِلَيْكَ بِنَبِيِّكَ نَبِيِّ الرَّحْمَةِ مُحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَآلِهِ","خدایا، از تو درخواست می‌کنم و به‌وسیله پیامبرت، پیامبر رحمت، محمد (ص)، به تو روی می‌آورم.");
-    addSeed("دعای عهد","امام زمان (عج)","اللَّهُمَّ رَبَّ النُّورِ الْعَظِيمِ، وَرَبَّ الْكُرْسِيِّ الرَّفِيعِ، وَرَبَّ الْبَحْرِ الْمَسْجُورِ","خدایا، ای پروردگار نور بزرگ، کرسی بلندمرتبه و دریای افروخته.");
-    addSeed("دعای کمیل","مناجات","اللَّهُمَّ إِنِّي أَسْأَلُكَ بِرَحْمَتِكَ الَّتِي وَسِعَتْ كُلَّ شَيْءٍ","خدایا، از تو به حق رحمتت که همه چیز را فرا گرفته درخواست می‌کنم.");
-    addSeed("دعای صباح","امام علی (ع)","يَا مَنْ دَلَعَ لِسَانَ الصَّبَاحِ بِنُطْقِ تَبَلُّجِهِ","ای آن‌که زبان صبح را با روشنایی و درخشش آن گویا ساختی.");
-    addSeed("دعای سلامتی امام زمان","امام زمان (عج)","اللَّهُمَّ كُنْ لِوَلِيِّكَ الْحَافِظاً وَقَائِداً وَنَاصِراً","خدایا، برای ولیّ خود نگهبان و راهبر و یاور باش.");
-    addSeed("تسبیحات حضرت زهرا","ذکر روزانه","سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ","پاک و منزه است خدا؛ ستایش مخصوص خداست؛ معبودی جز خدا نیست؛ و خدا بزرگ‌تر است.");
-    saveData();
-  }
-  void addSeed(String t,String c,String a,String p){duas.add(new Dua(t,c,a,p));}
-  void saveData(){try{JSONArray a=new JSONArray();for(Dua d:duas)a.put(d.json());getSharedPreferences("dua_store",0).edit().putString("duas",a.toString()).putString("default_audio",defaultAudio).apply();}catch(Exception ignored){}}
-
+  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(forest);getWindow().setNavigationBarColor(forest);loadPrefs();showHome();}
+  int dp(float n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
+  GradientDrawable bg(int c,int r,int stroke){GradientDrawable d=new GradientDrawable();d.setColor(c);d.setCornerRadius(dp(r));if(stroke!=0)d.setStroke(dp(1),stroke);return d;}
+  TextView tx(String s,int size,int color,boolean bold){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(color);t.setGravity(Gravity.CENTER_VERTICAL);t.setTextDirection(View.TEXT_DIRECTION_RTL);t.setPadding(dp(14),dp(10),dp(14),dp(10));if(bold)t.setTypeface(Typeface.DEFAULT,Typeface.BOLD);return t;}
+  LinearLayout col(){LinearLayout l=new LinearLayout(this);l.setOrientation(1);return l;}
+  LinearLayout.LayoutParams m(int top,int bottom){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.setMargins(dp(16),dp(top),dp(16),dp(bottom));return p;}
+  TextView btn(String s){TextView t=tx(s,14,Color.WHITE,true);t.setGravity(Gravity.CENTER);t.setBackground(bg(forest2,18,0));return t;}
+  void loadPrefs(){android.content.SharedPreferences p=getSharedPreferences("prefs",0);defaultAudio=p.getString("audio","");try{String a=p.getString("arabic_font",""),f=p.getString("persian_font","");if(!a.isEmpty())arabicFont=Typeface.createFromFile(a);if(!f.isEmpty())persianFont=Typeface.createFromFile(f);}catch(Exception ignored){}}
   void showHome(){
-    auto=false;stopAudio();page=column();page.setBackgroundColor(paper);
-    LinearLayout hero=column();hero.setPadding(dp(20),dp(22),dp(20),dp(24));hero.setBackground(shape(forest,0,0));
-    hero.addView(text("کتابخانهٔ شخصی شما",13,0xffd8c49c,true));hero.addView(text("گنجینهٔ ادعیه و مناجات",25,Color.WHITE,true));hero.addView(text("متن، ترجمه، صوت و ابزار مطالعه",14,0xffe6e9e2,false));page.addView(hero);
-    LinearLayout tools=row();tools.setPadding(dp(12),dp(14),dp(12),dp(6));
-    TextView add=button("+ افزودن دعا"), settings=button("تنظیمات و فونت");
-    tools.addView(add,new LinearLayout.LayoutParams(0,dp(48),1));View gap=new View(this);tools.addView(gap,lp(8,1));tools.addView(settings,new LinearLayout.LayoutParams(0,dp(48),1));page.addView(tools);
-    add.setOnClickListener(v->editDua(-1));settings.setOnClickListener(v->settingsDialog());
-    EditText search=new EditText(this);search.setSingleLine(true);search.setTextSize(15);search.setTextDirection(View.TEXT_DIRECTION_RTL);search.setHint("جست‌وجو در دعاها و دسته‌بندی‌ها");search.setPadding(dp(16),dp(5),dp(16),dp(5));search.setBackground(shape(Color.WHITE,20,0xffe5ddce));page.addView(search,margin(8,8));
-    LinearLayout list=column();page.addView(list);
-    renderList(list,"");
-    search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int c,int a){}public void onTextChanged(CharSequence s,int st,int before,int count){renderList(list,s.toString().trim());}public void afterTextChanged(android.text.Editable e){}});
-    TextView foot=text("برای افزودن محتوای شخصی، از دکمهٔ افزودن دعا استفاده کنید.",12,0xff88877f,false);foot.setGravity(Gravity.CENTER);page.addView(foot);
-    ScrollView sc=new ScrollView(this);sc.setFillViewport(true);sc.addView(page);setContentView(sc);
+    auto=false;stopAudio();page=col();page.setBackgroundColor(cream);
+    FrameLayout hero=new FrameLayout(this);hero.setBackground(bg(forest,0,0));hero.addView(new AmbientArt(this),new FrameLayout.LayoutParams(-1,dp(205)));
+    LinearLayout title=col();title.setPadding(dp(22),dp(20),dp(22),dp(20));TextView mini=tx("کتابخانهٔ دعا و مناجات",13,0xffe6d5ae,true),big=tx("قرارِ دل",30,Color.WHITE,true),desc=tx("دو مناجات؛ متن کامل و ترجمهٔ بندبه‌بند",13,0xffe7e9df,false);title.addView(mini);title.addView(big);title.addView(desc);hero.addView(title,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM|Gravity.RIGHT));page.addView(hero);
+    TextView welcome=tx("برای مطالعه انتخاب کن",18,forest,true);welcome.setPadding(dp(20),dp(18),dp(20),dp(8));page.addView(welcome);
+    addCard(0,"دعای فرج","درخواست نگهداری و یاری ولیّ خدا",0xffe7d8b6);
+    addCard(1,"دعای عهد","تجدید پیمان در آغاز روز",0xffd5e3d8);
+    TextView settings=btn("تنظیم فونت‌ها و صوت پیش‌فرض");page.addView(settings,m(12,18));settings.setOnClickListener(v->settings());
+    TextView foot=tx("متن عربی و ترجمهٔ فارسی به‌صورت بندبه‌بند",12,0xff88877f,false);foot.setGravity(Gravity.CENTER);page.addView(foot);
+    ScrollView sc=new ScrollView(this);sc.addView(page);setContentView(sc);
   }
-  void renderList(LinearLayout list,String q){
-    list.removeAllViews();int count=0;
-    for(int i=0;i<duas.size();i++){final int index=i;Dua d=duas.get(i);if(!d.title.contains(q)&&!d.category.contains(q))continue;count++;
-      LinearLayout card=row();card.setPadding(dp(12),dp(10),dp(12),dp(10));card.setBackground(shape(Color.WHITE,20,0xffe8e1d5));
-      TextView badge=text(String.format(Locale.US,"%02d",i+1),14,gold,true);badge.setGravity(Gravity.CENTER);badge.setBackground(shape(0xfff4efe4,16,0));card.addView(badge,lp(46,46));
-      LinearLayout info=column();info.addView(text(d.title,16,forest,true));info.addView(text(d.category+(d.audio.isEmpty()&&defaultAudio.isEmpty()?"  •  بدون صوت":"  •  صوت موجود"),12,0xff77766f,false));card.addView(info,new LinearLayout.LayoutParams(0,-2,1));
-      TextView arrow=text("‹",26,gold,true);card.addView(arrow,lp(28,-2));card.setOnClickListener(v->showDua(index));card.setOnLongClickListener(v->{duaMenu(index);return true;});list.addView(card,margin(5,6));
-    }
-    if(count==0){TextView empty=text("موردی پیدا نشد.",14,0xff777777,false);empty.setGravity(Gravity.CENTER);list.addView(empty);}
+  void addCard(int index,String title,String desc,int tint){
+    LinearLayout card=new LinearLayout(this);card.setOrientation(0);card.setGravity(Gravity.CENTER_VERTICAL);card.setPadding(dp(14),dp(14),dp(14),dp(14));card.setBackground(bg(Color.WHITE,22,0xffe9e1d2));
+    DuaArt art=new DuaArt(this,index);card.addView(art,new LinearLayout.LayoutParams(dp(82),dp(82)));
+    LinearLayout words=col();TextView h=tx(title,19,forest,true),s=tx(desc,12,0xff77766f,false);words.addView(h);words.addView(s);card.addView(words,new LinearLayout.LayoutParams(0,-2,1));
+    TextView arrow=tx("‹",28,gold,true);card.addView(arrow);card.setOnClickListener(v->read(index));page.addView(card,m(6,8));
   }
-
-  void showDua(int index){
-    selected=index;auto=false;stopAudio();Dua d=duas.get(index);page=column();page.setBackgroundColor(paper);
-    TextView back=button("بازگشت به فهرست");page.addView(back,margin(12,4));back.setOnClickListener(v->showHome());
-    TextView title=text(d.title,23,forest,true);title.setGravity(Gravity.CENTER);page.addView(title);
-    TextView category=text(d.category,12,gold,true);category.setGravity(Gravity.CENTER);page.addView(category);
-    if(!d.image.isEmpty()){try{ImageView iv=new ImageView(this);iv.setAdjustViewBounds(true);iv.setMaxHeight(dp(180));iv.setImageURI(Uri.fromFile(new File(d.image)));page.addView(iv,margin(8,4));}catch(Exception ignored){}}
-    ScrollView read=new ScrollView(this);LinearLayout content=column();
-    String[] chunks=d.arabic.split("\\n\\s*\\n");
-    String[] translations=d.persian.split("\\n\\s*\\n");
-    for(int i=0;i<chunks.length;i++){
-      TextView a=text(chunks[i],27,forest,true);a.setTypeface(arabicTypeface,Typeface.BOLD);a.setGravity(Gravity.CENTER);a.setLineSpacing(dp(9),1.15f);a.setPadding(dp(20),dp(22),dp(20),dp(22));a.setBackground(shape(Color.WHITE,22,0xffe8e1d5));content.addView(a,margin(12,5));
-      if(i<translations.length){TextView tr=text(translations[i],17,ink,false);tr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);tr.setLineSpacing(dp(6),1.1f);tr.setBackground(shape(0xfff0ebdf,20,0));content.addView(tr,margin(4,10));}
+  void read(int index){
+    selected=index;auto=false;stopAudio();page=col();page.setBackgroundColor(cream);
+    TextView back=btn("بازگشت به صفحهٔ اصلی");page.addView(back,m(10,4));back.setOnClickListener(v->showHome());
+    FrameLayout cover=new FrameLayout(this);cover.setBackground(bg(forest,22,0));DuaArt art=new DuaArt(this,index);cover.addView(art,new FrameLayout.LayoutParams(dp(105),dp(105),Gravity.LEFT|Gravity.CENTER_VERTICAL));TextView heading=tx(titles[index],22,Color.WHITE,true);heading.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);cover.addView(heading,new FrameLayout.LayoutParams(-1,-1));page.addView(cover,m(8,8));
+    ScrollView scroll=new ScrollView(this);LinearLayout body=col();
+    for(int i=0;i<ar[index].length;i++){
+      TextView a=tx(ar[index][i],25,forest,true);a.setTypeface(arabicFont,Typeface.BOLD);a.setGravity(Gravity.CENTER);a.setLineSpacing(dp(9),1.18f);a.setPadding(dp(20),dp(20),dp(20),dp(20));a.setBackground(bg(Color.WHITE,20,0xffe9e1d2));body.addView(a,m(8,4));
+      TextView tr=tx(fa[index][i],17,ink,false);tr.setTypeface(persianFont);tr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);tr.setLineSpacing(dp(6),1.12f);tr.setPadding(dp(18),dp(16),dp(18),dp(16));tr.setBackground(bg(0xffeee9dd,18,0));body.addView(tr,m(3,8));
     }
-    read.addView(content);page.addView(read,new LinearLayout.LayoutParams(-1,0,1));
-    LinearLayout controls=row();controls.setPadding(dp(12),dp(6),dp(12),dp(6));
-    TextView play=button("▶ پخش صوت"), scroll=button("حرکت خودکار"), more=button("مدیریت");
-    controls.addView(play,new LinearLayout.LayoutParams(0,dp(48),1));controls.addView(space(6),lp(6,1));controls.addView(scroll,new LinearLayout.LayoutParams(0,dp(48),1));controls.addView(space(6),lp(6,1));controls.addView(more,new LinearLayout.LayoutParams(0,dp(48),1));page.addView(controls);
-    play.setOnClickListener(v->playAudio(index,play));scroll.setOnClickListener(v->{auto=!auto;scroll.setText(auto?"توقف":"حرکت خودکار");if(auto)autoScroll(read,scroll);});more.setOnClickListener(v->duaMenu(index));
+    scroll.addView(body);page.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+    LinearLayout controls=new LinearLayout(this);controls.setPadding(dp(14),dp(8),dp(14),dp(8));TextView play=btn("▶ پخش صوت"),autoBtn=btn("حرکت خودکار");controls.addView(play,new LinearLayout.LayoutParams(0,dp(48),1));View gap=new View(this);controls.addView(gap,new LinearLayout.LayoutParams(dp(8),1));controls.addView(autoBtn,new LinearLayout.LayoutParams(0,dp(48),1));page.addView(controls);
+    play.setOnClickListener(v->play(index,play));autoBtn.setOnClickListener(v->{auto=!auto;autoBtn.setText(auto?"توقف حرکت":"حرکت خودکار");if(auto)scrollText(scroll,autoBtn);});
     setContentView(page);
   }
-  View space(int w){View v=new View(this);return v;}
-  void autoScroll(ScrollView s,TextView b){handler.postDelayed(new Runnable(){public void run(){if(!auto)return;int max=s.getChildAt(0).getHeight()-s.getHeight();if(s.getScrollY()>=max){auto=false;b.setText("حرکت خودکار");return;}s.smoothScrollBy(0,dp(2));autoScroll(s,b);}},80);}
-
-  void duaMenu(int i){
-    String[] opts={"ویرایش متن و عنوان","انتخاب صوت اختصاصی (حداکثر ۳۰ مگابایت)","انتخاب تصویر دعا","حذف دعا"};
-    new AlertDialog.Builder(this).setTitle(duas.get(i).title).setItems(opts,(dlg,which)->{
-      if(which==0)editDua(i);
-      if(which==1){selected=i;pick(PICK_AUDIO,"audio/*");}
-      if(which==2){selected=i;pick(PICK_IMAGE,"image/*");}
-      if(which==3)new AlertDialog.Builder(this).setMessage("این دعا از فهرست شخصی حذف شود؟").setNegativeButton("انصراف",null).setPositiveButton("حذف",(x,y)->{duas.remove(i);saveData();showHome();}).show();
-    }).show();
+  void scrollText(ScrollView s,TextView b){handler.postDelayed(new Runnable(){public void run(){if(!auto)return;int max=s.getChildAt(0).getHeight()-s.getHeight();if(s.getScrollY()>=max){auto=false;b.setText("حرکت خودکار");return;}s.smoothScrollBy(0,dp(2));scrollText(s,b);}},80);}
+  void settings(){
+    String[] opts={"انتخاب فونت عربی","انتخاب فونت فارسی","انتخاب صوت پیش‌فرض","پاک‌کردن صوت پیش‌فرض"};
+    new AlertDialog.Builder(this).setTitle("تنظیمات مطالعه").setItems(opts,(d,w)->{if(w==0)pick(PICK_ARABIC_FONT,"font/ttf");if(w==1)pick(PICK_PERSIAN_FONT,"font/ttf");if(w==2)pick(PICK_AUDIO,"audio/*");if(w==3){defaultAudio="";savePrefs();showHome();}}).show();
   }
-
-  void editDua(int index){
-    boolean fresh=index<0;Dua d=fresh?new Dua("","","",""):duas.get(index);
-    LinearLayout form=column();form.setPadding(dp(8),dp(4),dp(8),dp(4));
-    EditText title=field("عنوان دعا",d.title,false),cat=field("دسته‌بندی / منبع",d.category,false),arab=field("متن عربی (برای جدا کردن بندها یک خط خالی بگذارید)",d.arabic,true),pers=field("ترجمهٔ فارسی (بندها را به همان ترتیب جدا کنید)",d.persian,true);
-    form.addView(title);form.addView(cat);form.addView(arab);form.addView(pers);
-    ScrollView sc=new ScrollView(this);sc.addView(form);
-    new AlertDialog.Builder(this).setTitle(fresh?"افزودن دعای جدید":"ویرایش دعا").setView(sc).setNegativeButton("انصراف",null).setPositiveButton("ذخیره",(x,y)->{
-      if(title.getText().toString().trim().isEmpty()||arab.getText().toString().trim().isEmpty()){toast("عنوان و متن عربی الزامی است.");return;}
-      d.title=title.getText().toString().trim();d.category=cat.getText().toString().trim();d.arabic=arab.getText().toString().trim();d.persian=pers.getText().toString().trim();if(fresh)duas.add(d);saveData();showHome();
-    }).show();
-  }
-  EditText field(String hint,String value,boolean multi){EditText e=new EditText(this);e.setText(value);e.setHint(hint);e.setTextSize(15);e.setTextDirection(View.TEXT_DIRECTION_RTL);e.setGravity(Gravity.RIGHT|Gravity.TOP);e.setPadding(dp(12),dp(10),dp(12),dp(10));e.setBackground(shape(Color.WHITE,14,0xffded8cd));LinearLayout.LayoutParams p=margin(5,5);if(multi){e.setMinLines(3);e.setInputType( android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);}else e.setSingleLine(true);e.setLayoutParams(p);return e;}
-
-  void settingsDialog(){
-    String[] options={"انتخاب فونت عربی TTF/OTF","انتخاب صوت پیش‌فرض","حذف صوت پیش‌فرض","درباره و راهنمای برنامه"};
-    new AlertDialog.Builder(this).setTitle("تنظیمات کتابخانه").setItems(options,(d,w)->{
-      if(w==0)pick(PICK_FONT,"font/*");
-      if(w==1)pickDefaultAudio();
-      if(w==2){defaultAudio="";saveData();toast("صوت پیش‌فرض حذف شد.");showHome();}
-      if(w==3)new AlertDialog.Builder(this).setTitle("راهنما").setMessage("متن‌ها و فایل‌های واردشده روی همین دستگاه نگهداری می‌شوند. برای هر دعا می‌توانید صوت و تصویر جداگانه انتخاب کنید. حجم هر فایل صوتی حداکثر ۳۰ مگابایت است.").setPositiveButton("متوجه شدم",null).show();
-    }).show();
-  }
-  void pickDefaultAudio(){selected=-1;pick(PICK_AUDIO,"audio/*");}
-  void pick(int request,String type){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType(type);startActivityForResult(i,request);}
-  @Override protected void onActivityResult(int req,int result,Intent data){
-    super.onActivityResult(req,result,data);if(result!=RESULT_OK||data==null||data.getData()==null)return;Uri uri=data.getData();
-    try{
-      if(req==PICK_AUDIO){long size=getSize(uri);if(size>30L*1024*1024){toast("حجم فایل صوتی باید حداکثر ۳۰ مگابایت باشد.");return;}String path=copyToPrivate(uri,"audio_"+System.currentTimeMillis()+".bin");if(selected<0){defaultAudio=path;saveData();toast("صوت پیش‌فرض ذخیره شد.");showHome();}else{duas.get(selected).audio=path;saveData();toast("صوت دعا ذخیره شد.");showDua(selected);}}
-      else if(req==PICK_FONT){String path=copyToPrivate(uri,"custom_font.ttf");Typeface tf=Typeface.createFromFile(path);arabicTypeface=tf;getSharedPreferences("dua_store",0).edit().putString("font",path).apply();toast("فونت سفارشی ثبت شد.");if(selected>=0)showDua(selected);}
-      else if(req==PICK_IMAGE&&selected>=0){String path=copyToPrivate(uri,"dua_image_"+System.currentTimeMillis()+".img");duas.get(selected).image=path;saveData();showDua(selected);toast("تصویر دعا ثبت شد.");}
-    }catch(Exception e){toast("خطا در خواندن فایل: "+e.getMessage());}
-  }
-  long getSize(Uri u){try(Cursor c=getContentResolver().query(u,null,null,null,null)){if(c!=null&&c.moveToFirst()){int col=c.getColumnIndex(OpenableColumns.SIZE);if(col>=0)return c.getLong(col);}}return 0;}
-  String copyToPrivate(Uri uri,String name)throws Exception{File f=new File(getFilesDir(),name);try(InputStream in=getContentResolver().openInputStream(uri);OutputStream out=new FileOutputStream(f)){byte[] b=new byte[8192];int n;while((n=in.read(b))>0)out.write(b,0,n);}return f.getAbsolutePath();}
-  void playAudio(int i,TextView button){
-    String path=!duas.get(i).audio.isEmpty()?duas.get(i).audio:defaultAudio;
-    if(path.isEmpty()){toast("برای این دعا صوت اختصاصی یا صوت پیش‌فرض انتخاب نشده است.");return;}
-    stopAudio();try{player=new MediaPlayer();player.setDataSource(path);player.setOnPreparedListener(mp->{mp.start();button.setText("■ توقف صوت");});player.setOnCompletionListener(mp->{button.setText("▶ پخش صوت");stopAudio();});player.prepareAsync();button.setOnClickListener(v->{stopAudio();button.setText("▶ پخش صوت");});}catch(Exception e){toast("پخش این فایل ممکن نیست.");stopAudio();}
-  }
+  void pick(int code,String type){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType(type);startActivityForResult(i,code);}
+  @Override protected void onActivityResult(int r,int result,Intent data){super.onActivityResult(r,result,data);if(result!=RESULT_OK||data==null||data.getData()==null)return;try{Uri u=data.getData();String path=copy(u,"asset_"+System.currentTimeMillis());if(r==PICK_AUDIO){long size=size(u);if(size>30L*1024*1024){toast("حجم صوت باید حداکثر ۳۰ مگابایت باشد.");return;}defaultAudio=path;savePrefs();toast("صوت پیش‌فرض ثبت شد.");}else if(r==PICK_ARABIC_FONT){arabicFont=Typeface.createFromFile(path);getSharedPreferences("prefs",0).edit().putString("arabic_font",path).apply();toast("فونت عربی ثبت شد.");}else if(r==PICK_PERSIAN_FONT){persianFont=Typeface.createFromFile(path);getSharedPreferences("prefs",0).edit().putString("persian_font",path).apply();toast("فونت فارسی ثبت شد.");}if(selected>=0)read(selected);else showHome();}catch(Exception e){toast("فایل انتخاب‌شده قابل استفاده نیست.");}}
+  String copy(Uri u,String name)throws Exception{File f=new File(getFilesDir(),name);try(InputStream in=getContentResolver().openInputStream(u);OutputStream out=new FileOutputStream(f)){byte[] b=new byte[8192];int n;while((n=in.read(b))>0)out.write(b,0,n);}return f.getAbsolutePath();}
+  long size(Uri u){try(Cursor c=getContentResolver().query(u,null,null,null,null)){if(c!=null&&c.moveToFirst()){int i=c.getColumnIndex(OpenableColumns.SIZE);if(i>=0)return c.getLong(i);}}return 0;}
+  void savePrefs(){getSharedPreferences("prefs",0).edit().putString("audio",defaultAudio).apply();}
+  void play(int index,TextView b){if(defaultAudio.isEmpty()){toast("برای پخش، ابتدا صوت پیش‌فرض انتخاب کن.");return;}stopAudio();try{player=new MediaPlayer();player.setDataSource(defaultAudio);player.setOnPreparedListener(p->{p.start();b.setText("■ توقف");});player.setOnCompletionListener(p->{b.setText("▶ پخش صوت");stopAudio();});player.prepareAsync();b.setOnClickListener(v->{stopAudio();b.setText("▶ پخش صوت");});}catch(Exception e){toast("پخش این فایل ممکن نیست.");stopAudio();}}
   void stopAudio(){if(player!=null){try{if(player.isPlaying())player.stop();player.release();}catch(Exception ignored){}player=null;}}
   void toast(String s){Toast.makeText(this,s,Toast.LENGTH_LONG).show();}
   @Override public void onBackPressed(){auto=false;stopAudio();showHome();}
   @Override protected void onDestroy(){auto=false;stopAudio();super.onDestroy();}
+
+  class AmbientArt extends View{
+    Paint p=new Paint(3);long start=System.currentTimeMillis();
+    AmbientArt(Context c){super(c);setLayerType(View.LAYER_TYPE_SOFTWARE,null);}
+    protected void onDraw(Canvas c){super.onDraw(c);float w=getWidth(),h=getHeight();p.setShader(new LinearGradient(0,0,w,h,0xff102e29,0xff28604e,Shader.TileMode.CLAMP));c.drawRect(0,0,w,h,p);p.setShader(null);
+      p.setColor(0x20ffffff);for(int i=0;i<5;i++){float x=(float)(w*(.15+.18*i)+Math.sin((System.currentTimeMillis()-start)/1200.0+i)*dp(9));float y=h*(.22f+.13f*(i%3));c.drawCircle(x,y,dp(4+i%2),p);}
+      p.setColor(0xffd7bd86);c.drawCircle(w-dp(55),dp(55),dp(28),p);p.setColor(0xff1d5143);c.drawCircle(w-dp(42),dp(44),dp(26),p);
+      p.setColor(0xffead7a9);Path star=new Path();star.moveTo(w-dp(94),dp(32));star.lineTo(w-dp(89),dp(45));star.lineTo(w-dp(76),dp(49));star.lineTo(w-dp(89),dp(53));star.lineTo(w-dp(94),dp(66));star.lineTo(w-dp(99),dp(53));star.lineTo(w-dp(112),dp(49));star.lineTo(w-dp(99),dp(45));star.close();c.drawPath(star,p);
+      postInvalidateDelayed(60);
+    }
+  }
+  class DuaArt extends View{
+    Paint p=new Paint(3);int which;DuaArt(Context c,int n){super(c);which=n;}
+    protected void onDraw(Canvas c){float w=getWidth(),h=getHeight();p.setShader(new LinearGradient(0,0,w,h,which==0?0xffd8c39a:0xffb8cfc0,which==0?0xfff2e8d2:0xffe4eadf,Shader.TileMode.CLAMP));c.drawRoundRect(0,0,w,h,dp(18),dp(18),p);p.setShader(null);
+      p.setColor(which==0?0xff31594b:0xff315b4c);c.drawCircle(w*.5f,h*.43f,w*.23f,p);p.setColor(0xfff4e5bd);c.drawCircle(w*.58f,h*.35f,w*.17f,p);p.setColor(which==0?0xffd8c39a:0xffb8cfc0);c.drawCircle(w*.66f,h*.29f,w*.15f,p);
+      p.setColor(0xff31594b);Path dome=new Path();dome.moveTo(w*.18f,h*.75f);dome.quadTo(w*.5f,h*.28f,w*.82f,h*.75f);dome.close();c.drawPath(dome,p);c.drawRect(w*.18f,h*.73f,w*.82f,h*.87f,p);
+      p.setColor(0xffe6d5ae);for(int i=0;i<3;i++)c.drawCircle(w*(.32f+i*.18f),h*.79f,dp(2),p);
+    }
+  }
 }
