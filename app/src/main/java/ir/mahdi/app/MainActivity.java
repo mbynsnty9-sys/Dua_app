@@ -18,10 +18,10 @@ import java.util.*;
 public class MainActivity extends Activity {
   final int forest=0xff123b32, forest2=0xff1d5949, gold=0xffc5a36a, cream=0xfff7f3e9, ink=0xff35352f, nightBg=0xff0b211c, nightSurface=0xff14352c, nightText=0xfff5f3eb;
   boolean nightMode=true, introRunning=false;
-  final int PICK_AUDIO=10, PICK_ARABIC_FONT=11, PICK_PERSIAN_FONT=12;
+  final int PICK_AUDIO=10, PICK_ARABIC_FONT=11, PICK_PERSIAN_FONT=12, PICK_APP_FONT=13;
   LinearLayout page;
   MediaPlayer player;
-  Typeface arabicFont=Typeface.create("serif",0), persianFont=Typeface.create("sans-serif",0), titleFont=Typeface.create("serif",Typeface.BOLD);
+  Typeface arabicFont=Typeface.create("serif",0), persianFont=Typeface.create("sans-serif",0), titleFont=Typeface.create("serif",Typeface.BOLD), appFont=Typeface.DEFAULT;
   int arabicSize=25, persianSize=17;
   String defaultAudio="";
   int selected=-1;
@@ -76,7 +76,7 @@ public class MainActivity extends Activity {
   }
   int dp(float n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
   GradientDrawable bg(int c,int r,int stroke){GradientDrawable d=new GradientDrawable();d.setColor(c);d.setCornerRadius(dp(r));if(stroke!=0)d.setStroke(dp(1),stroke);return d;}
-  TextView tx(String s,int size,int color,boolean bold){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(color);t.setGravity(Gravity.CENTER_VERTICAL);t.setTextDirection(View.TEXT_DIRECTION_RTL);t.setPadding(dp(14),dp(10),dp(14),dp(10));if(bold)t.setTypeface(Typeface.DEFAULT,Typeface.BOLD);return t;}
+  TextView tx(String s,int size,int color,boolean bold){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(color);t.setGravity(Gravity.CENTER_VERTICAL);t.setTextDirection(View.TEXT_DIRECTION_RTL);t.setPadding(dp(14),dp(10),dp(14),dp(10));t.setTypeface(appFont,bold?Typeface.BOLD:Typeface.NORMAL);return t;}
   LinearLayout col(){LinearLayout l=new LinearLayout(this);l.setOrientation(1);return l;}
   LinearLayout.LayoutParams m(int top,int bottom){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.setMargins(dp(16),dp(top),dp(16),dp(bottom));return p;}
   TextView btn(String s){TextView t=tx(s,14,Color.WHITE,true);t.setGravity(Gravity.CENTER);t.setBackground(bg(forest2,18,0));return t;}
@@ -85,26 +85,27 @@ public class MainActivity extends Activity {
     defaultAudio=p.getString("audio","");
     arabicSize=p.getInt("arabic_size",25);persianSize=p.getInt("persian_size",17);
     try{String a=p.getString("arabic_font",""),f=p.getString("persian_font","");
-      if(!a.isEmpty())arabicFont=Typeface.createFromFile(a);if(!f.isEmpty())persianFont=Typeface.createFromFile(f);
+      if(!a.isEmpty())arabicFont=Typeface.createFromFile(a);if(!f.isEmpty())persianFont=Typeface.createFromFile(f);\n      String all=p.getString("app_font","");if(!all.isEmpty())appFont=Typeface.createFromFile(all);
     }catch(Exception ignored){}
     try{arabicFont=Typeface.createFromAsset(getAssets(),"fonts/FedraArabic.ttf");persianFont=arabicFont;titleFont=Typeface.createFromAsset(getAssets(),"fonts/IRAmir.ttf");}catch(Exception ignored){}
   }
   void showWelcome(){
     introRunning=true;
     getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);
-    FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.BLACK);
-    ImageView photo=new ImageView(this);photo.setScaleType(ImageView.ScaleType.CENTER_CROP);
-    try(InputStream in=getAssets().open("welcome.jpg")){photo.setImageBitmap(BitmapFactory.decodeStream(in));}catch(Exception e){photo.setBackgroundColor(nightBg);}
-    root.addView(photo,new FrameLayout.LayoutParams(-1,-1));
-    View shade=new View(this);shade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,new int[]{0x22000000,0x11000000,0xbb06150f,0xee06150f}));
-    root.addView(shade,new FrameLayout.LayoutParams(-1,-1));
-    TextView welcome=tx("خوش آمدید",32,Color.WHITE,true);welcome.setTypeface(titleFont,Typeface.BOLD);welcome.setGravity(Gravity.CENTER);
-    welcome.setShadowLayer(dp(16),0,0,0xffffe6a3);welcome.setAlpha(0f);
-    FrameLayout.LayoutParams wp=new FrameLayout.LayoutParams(-1,dp(100),Gravity.BOTTOM);
-    wp.setMargins(dp(18),0,dp(18),dp(76));root.addView(welcome,wp);
+    FrameLayout root=new FrameLayout(this);root.setBackgroundColor(0xff071c17);
+    View light=new View(this);
+    light.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,new int[]{0x66fff1c7,0x2278b99a,0x00000000}));
+    root.addView(light,new FrameLayout.LayoutParams(-1,-1));
+    LinearLayout center=col();center.setGravity(Gravity.CENTER);
+    TextView brand=tx("شوشتر جوان",32,Color.WHITE,true);brand.setTypeface(titleFont,Typeface.BOLD);brand.setGravity(Gravity.CENTER);brand.setAlpha(0f);
+    TextView welcome=tx("خوش آمدید.",22,0xffeee5d3,false);welcome.setTypeface(appFont);welcome.setGravity(Gravity.CENTER);welcome.setAlpha(0f);
+    center.addView(brand,new LinearLayout.LayoutParams(-1,-2));center.addView(welcome,new LinearLayout.LayoutParams(-1,-2));
+    root.addView(center,new FrameLayout.LayoutParams(-1,-1));
     setContentView(root);
-    welcome.animate().alpha(1f).setStartDelay(550).setDuration(1200).start();
-    root.postDelayed(()->{if(introRunning){introRunning=false;showHome();}},3200);
+    brand.animate().alpha(1f).setStartDelay(250).setDuration(1100).start();
+    welcome.animate().alpha(1f).setStartDelay(650).setDuration(1000).start();
+    root.postDelayed(()->{brand.animate().alpha(0f).setDuration(650).start();welcome.animate().alpha(0f).setDuration(650).start();},2350);
+    root.postDelayed(()->{if(introRunning){introRunning=false;showHome();}},3100);
   }
   int bgColor(){return nightMode?nightBg:cream;}
   int textColor(){return nightMode?nightText:ink;}
@@ -159,7 +160,7 @@ public class MainActivity extends Activity {
   }
   void scrollText(ScrollView s,TextView b){handler.postDelayed(new Runnable(){public void run(){if(!auto)return;int max=s.getChildAt(0).getHeight()-s.getHeight();if(s.getScrollY()>=max){auto=false;b.setText("حرکت خودکار");return;}s.smoothScrollBy(0,dp(2));scrollText(s,b);}},80);}
   void settings(){
-    String[] opts={"حالت روز / شب","تنظیم اندازهٔ متن عربی و فارسی","انتخاب فونت عربی از گوشی","انتخاب فونت فارسی از گوشی","انتخاب صوت پیش‌فرض","پاک‌کردن صوت پیش‌فرض"};
+    String[] opts={"حالت روز / شب","تنظیم اندازهٔ متن عربی و فارسی","انتخاب فونت عربی از گوشی","انتخاب فونت فارسی از گوشی","انتخاب فونت کل برنامه از گوشی","حذف فونت سفارشی برنامه","انتخاب صوت پیش‌فرض","پاک‌کردن صوت پیش‌فرض"};
     new AlertDialog.Builder(this).setTitle("تنظیمات قرار دل").setItems(opts,(d,w)->{
       if(w==0)toggleTheme();
       if(w==1)textSizeSettings();
@@ -179,7 +180,7 @@ public class MainActivity extends Activity {
     new AlertDialog.Builder(this).setTitle("اندازهٔ نوشته‌ها").setView(box).setNegativeButton("انصراف",(d,w)->{}).setPositiveButton("ذخیره",(d,w)->{getSharedPreferences("prefs",0).edit().putInt("arabic_size",arabicSize).putInt("persian_size",persianSize).apply();if(selected>=0)read(selected);}).show();
   }
   void pick(int code,String type){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType(type);startActivityForResult(i,code);}
-  @Override protected void onActivityResult(int r,int result,Intent data){super.onActivityResult(r,result,data);if(result!=RESULT_OK||data==null||data.getData()==null)return;try{Uri u=data.getData();String path=copy(u,"asset_"+System.currentTimeMillis());if(r==PICK_AUDIO){long size=size(u);if(size>30L*1024*1024){toast("حجم صوت باید حداکثر ۳۰ مگابایت باشد.");return;}defaultAudio=path;savePrefs();toast("صوت پیش‌فرض ثبت شد.");}else if(r==PICK_ARABIC_FONT){arabicFont=Typeface.createFromFile(path);getSharedPreferences("prefs",0).edit().putString("arabic_font",path).apply();toast("فونت عربی ثبت شد.");}else if(r==PICK_PERSIAN_FONT){persianFont=Typeface.createFromFile(path);getSharedPreferences("prefs",0).edit().putString("persian_font",path).apply();toast("فونت فارسی ثبت شد.");}if(selected>=0)read(selected);else showHome();}catch(Exception e){toast("فایل انتخاب‌شده قابل استفاده نیست.");}}
+  @Override protected void onActivityResult(int r,int result,Intent data){super.onActivityResult(r,result,data);if(result!=RESULT_OK||data==null||data.getData()==null)return;try{Uri u=data.getData();String path=copy(u,"asset_"+System.currentTimeMillis());if(r==PICK_AUDIO){long size=size(u);if(size>30L*1024*1024){toast("حجم صوت باید حداکثر ۳۰ مگابایت باشد.");return;}defaultAudio=path;savePrefs();toast("صوت پیش‌فرض ثبت شد.");}else if(r==PICK_ARABIC_FONT){arabicFont=Typeface.createFromFile(path);getSharedPreferences("prefs",0).edit().putString("arabic_font",path).apply();toast("فونت عربی ثبت شد.");}else if(r==PICK_PERSIAN_FONT){persianFont=Typeface.createFromFile(path);getSharedPreferences("prefs",0).edit().putString("persian_font",path).apply();toast("فونت فارسی ثبت شد.");}else if(r==PICK_APP_FONT){appFont=Typeface.createFromFile(path);titleFont=appFont;getSharedPreferences("prefs",0).edit().putString("app_font",path).apply();toast("فونت کل برنامه ثبت شد.");}if(selected>=0)read(selected);else showHome();}catch(Exception e){toast("فایل انتخاب‌شده قابل استفاده نیست.");}}
   String copy(Uri u,String name)throws Exception{File f=new File(getFilesDir(),name);try(InputStream in=getContentResolver().openInputStream(u);OutputStream out=new FileOutputStream(f)){byte[] b=new byte[8192];int n;while((n=in.read(b))>0)out.write(b,0,n);}return f.getAbsolutePath();}
   long size(Uri u){try(Cursor c=getContentResolver().query(u,null,null,null,null)){if(c!=null&&c.moveToFirst()){int i=c.getColumnIndex(OpenableColumns.SIZE);if(i>=0)return c.getLong(i);}}return 0;}
   void savePrefs(){getSharedPreferences("prefs",0).edit().putString("audio",defaultAudio).apply();}
