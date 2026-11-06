@@ -227,11 +227,3 @@ public class MainActivity extends Activity {
     }
   }
 }
-}
-    protected void onDraw(Canvas c){float w=getWidth(),h=getHeight();p.setShader(new LinearGradient(0,0,w,h,which==0?0xffd8c39a:0xffb8cfc0,which==0?0xfff2e8d2:0xffe4eadf,Shader.TileMode.CLAMP));c.drawRoundRect(0,0,w,h,dp(18),dp(18),p);p.setShader(null);
-      p.setColor(which==0?0xff31594b:0xff315b4c);c.drawCircle(w*.5f,h*.43f,w*.23f,p);p.setColor(0xfff4e5bd);c.drawCircle(w*.58f,h*.35f,w*.17f,p);p.setColor(which==0?0xffd8c39a:0xffb8cfc0);c.drawCircle(w*.66f,h*.29f,w*.15f,p);
-      p.setColor(0xff31594b);Path dome=new Path();dome.moveTo(w*.18f,h*.75f);dome.quadTo(w*.5f,h*.28f,w*.82f,h*.75f);dome.close();c.drawPath(dome,p);c.drawRect(w*.18f,h*.73f,w*.82f,h*.87f,p);
-      p.setColor(0xffe6d5ae);for(int i=0;i<3;i++)c.drawCircle(w*(.32f+i*.18f),h*.79f,dp(2),p);
-    }
-  }
-}
