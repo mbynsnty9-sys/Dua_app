@@ -21,7 +21,8 @@ public class MainActivity extends Activity {
   final int PICK_AUDIO=10, PICK_ARABIC_FONT=11, PICK_PERSIAN_FONT=12;
   LinearLayout page;
   MediaPlayer player;
-  Typeface arabicFont=Typeface.create("serif",0), persianFont=Typeface.create("sans-serif",0);
+  Typeface arabicFont=Typeface.create("serif",0), persianFont=Typeface.create("sans-serif",0), titleFont=Typeface.create("serif",Typeface.BOLD);
+  int arabicSize=25, persianSize=17;
   String defaultAudio="";
   int selected=-1;
   boolean auto=false;
@@ -79,25 +80,31 @@ public class MainActivity extends Activity {
   LinearLayout col(){LinearLayout l=new LinearLayout(this);l.setOrientation(1);return l;}
   LinearLayout.LayoutParams m(int top,int bottom){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.setMargins(dp(16),dp(top),dp(16),dp(bottom));return p;}
   TextView btn(String s){TextView t=tx(s,14,Color.WHITE,true);t.setGravity(Gravity.CENTER);t.setBackground(bg(forest2,18,0));return t;}
-  void loadPrefs(){android.content.SharedPreferences p=getSharedPreferences("prefs",0);defaultAudio=p.getString("audio","");try{String a=p.getString("arabic_font",""),f=p.getString("persian_font","");if(!a.isEmpty())arabicFont=Typeface.createFromFile(a);if(!f.isEmpty())persianFont=Typeface.createFromFile(f);}catch(Exception ignored){}}
+  void loadPrefs(){
+    android.content.SharedPreferences p=getSharedPreferences("prefs",0);
+    defaultAudio=p.getString("audio","");
+    arabicSize=p.getInt("arabic_size",25);persianSize=p.getInt("persian_size",17);
+    try{String a=p.getString("arabic_font",""),f=p.getString("persian_font","");
+      if(!a.isEmpty())arabicFont=Typeface.createFromFile(a);if(!f.isEmpty())persianFont=Typeface.createFromFile(f);
+    }catch(Exception ignored){}
+    try{arabicFont=Typeface.createFromAsset(getAssets(),"fonts/FedraArabic.ttf");persianFont=arabicFont;titleFont=Typeface.createFromAsset(getAssets(),"fonts/IRAmir.ttf");}catch(Exception ignored){}
+  }
   void showWelcome(){
     introRunning=true;
-    getWindow().setStatusBarColor(nightBg);
-    getWindow().setNavigationBarColor(nightBg);
-    FrameLayout root=new FrameLayout(this);
-    root.setBackgroundColor(nightBg);
-    WelcomeArt art=new WelcomeArt(this);
-    root.addView(art,new FrameLayout.LayoutParams(-1,-1));
-    TextView welcome=tx("خوش آمدید",30,Color.WHITE,true);
-    welcome.setGravity(Gravity.CENTER);
-    welcome.setShadowLayer(dp(18),0,0,0xffffe6a3);
-    welcome.setAlpha(0f);
-    FrameLayout.LayoutParams wp=new FrameLayout.LayoutParams(-1,dp(90),Gravity.BOTTOM);
-    wp.setMargins(dp(18),0,dp(18),dp(110));
-    root.addView(welcome,wp);
+    getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);
+    FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.BLACK);
+    ImageView photo=new ImageView(this);photo.setScaleType(ImageView.ScaleType.CENTER_CROP);
+    try(InputStream in=getAssets().open("welcome.jpg")){photo.setImageBitmap(BitmapFactory.decodeStream(in));}catch(Exception e){photo.setBackgroundColor(nightBg);}
+    root.addView(photo,new FrameLayout.LayoutParams(-1,-1));
+    View shade=new View(this);shade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,new int[]{0x22000000,0x11000000,0xbb06150f,0xee06150f}));
+    root.addView(shade,new FrameLayout.LayoutParams(-1,-1));
+    TextView welcome=tx("خوش آمدید",32,Color.WHITE,true);welcome.setTypeface(titleFont,Typeface.BOLD);welcome.setGravity(Gravity.CENTER);
+    welcome.setShadowLayer(dp(16),0,0,0xffffe6a3);welcome.setAlpha(0f);
+    FrameLayout.LayoutParams wp=new FrameLayout.LayoutParams(-1,dp(100),Gravity.BOTTOM);
+    wp.setMargins(dp(18),0,dp(18),dp(76));root.addView(welcome,wp);
     setContentView(root);
-    welcome.animate().alpha(1f).setStartDelay(850).setDuration(1100).start();
-    root.postDelayed(()->{if(introRunning){introRunning=false;showHome();}},3400);
+    welcome.animate().alpha(1f).setStartDelay(550).setDuration(1200).start();
+    root.postDelayed(()->{if(introRunning){introRunning=false;showHome();}},3200);
   }
   int bgColor(){return nightMode?nightBg:cream;}
   int textColor(){return nightMode?nightText:ink;}
@@ -107,13 +114,13 @@ public class MainActivity extends Activity {
   void showHome(){
     auto=false;stopAudio();applyBars();page=col();page.setBackgroundColor(bgColor());
     FrameLayout hero=new FrameLayout(this);hero.setBackground(bg(nightMode?0xff102d25:0xffe8dfc8,0,0));
-    hero.addView(new AmbientArt(this),new FrameLayout.LayoutParams(-1,dp(190)));
+    hero.addView(new AmbientArt(this),new FrameLayout.LayoutParams(-1,dp(230)));
     LinearLayout title=col();title.setPadding(dp(18),dp(18),dp(18),dp(18));
-    TextView mini=tx("کتابخانهٔ دعا و مناجات",13,0xffe6d5ae,true),big=tx("قرارِ دل",30,Color.WHITE,true),desc=tx("آرامش در یاد و نیایش",13,0xffe7e9df,false);
+    TextView mini=tx("کتابخانهٔ دعا و مناجات",13,0xffe6d5ae,true),big=tx("قرارِ دل",30,Color.WHITE,true),desc=tx("آرامش در یاد و نیایش",13,0xffe7e9df,false);mini.setTypeface(titleFont);big.setTypeface(titleFont,Typeface.BOLD);desc.setTypeface(titleFont);
     title.addView(mini);title.addView(big);title.addView(desc);
     hero.addView(title,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM|Gravity.RIGHT));page.addView(hero);
     LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(dp(12),dp(8),dp(12),dp(4));
-    TextView welcome=tx("خوش آمدید",21,textColor(),true);top.addView(welcome,new LinearLayout.LayoutParams(0,-2,1));
+    TextView welcome=tx("خوش آمدید",21,textColor(),true);welcome.setTypeface(titleFont,Typeface.BOLD);top.addView(welcome,new LinearLayout.LayoutParams(0,-2,1));
     TextView theme=tx(nightMode?"☀ حالت روز":"☾ حالت شب",13,gold,true);theme.setGravity(Gravity.CENTER);theme.setBackground(bg(nightMode?nightSurface:0xffeee5d3,22,gold));top.addView(theme,new LinearLayout.LayoutParams(-2,dp(42)));theme.setOnClickListener(v->toggleTheme());page.addView(top);
     TextView hint=tx("برای شروع، یک دعا را انتخاب کنید",14,secondaryText(),false);hint.setPadding(dp(16),dp(14),dp(16),dp(8));page.addView(hint);
     addCard(0,"دعای فرج","اللهم کن لولیک الحجة بن الحسن",0);
@@ -125,7 +132,7 @@ public class MainActivity extends Activity {
   void addCard(int index,String title,String desc,int tint){
     LinearLayout row=new LinearLayout(this);row.setOrientation(0);row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(dp(10),dp(14),dp(10),dp(14));
     DigitalIcon icon=new DigitalIcon(this,index);row.addView(icon,new LinearLayout.LayoutParams(dp(66),dp(66)));
-    LinearLayout words=col();TextView h=tx(title,19,textColor(),true),sub=tx(desc,12,secondaryText(),false);words.addView(h);words.addView(sub);
+    LinearLayout words=col();TextView h=tx(title,19,textColor(),true),sub=tx(desc,12,secondaryText(),false);h.setTypeface(titleFont,Typeface.BOLD);words.addView(h);words.addView(sub);
     LinearLayout.LayoutParams wordsLp=new LinearLayout.LayoutParams(0,-2,1);wordsLp.setMargins(dp(10),0,dp(4),0);row.addView(words,wordsLp);
     TextView arrow=tx("›",30,gold,true);arrow.setGravity(Gravity.CENTER);row.addView(arrow,new LinearLayout.LayoutParams(dp(28),dp(48)));
     View line=new View(this);line.setBackgroundColor(nightMode?0xff29463d:0xffded5c3);
@@ -135,12 +142,12 @@ public class MainActivity extends Activity {
   void read(int index){
     selected=index;auto=false;stopAudio();applyBars();page=col();page.setBackgroundColor(bgColor());
     TextView back=tx("‹   بازگشت",15,gold,true);back.setPadding(dp(14),dp(12),dp(14),dp(12));page.addView(back);back.setOnClickListener(v->showHome());
-    TextView heading=tx(titles[index],25,textColor(),true);heading.setPadding(dp(12),dp(6),dp(12),dp(10));page.addView(heading);
+    TextView heading=tx(titles[index],25,textColor(),true);heading.setTypeface(titleFont,Typeface.BOLD);heading.setPadding(dp(12),dp(6),dp(12),dp(10));page.addView(heading);
     TextView sub=tx(subtitles[index],13,secondaryText(),false);sub.setPadding(dp(12),0,dp(12),dp(12));page.addView(sub);
     ScrollView scroll=new ScrollView(this);LinearLayout body=col();body.setPadding(dp(10),dp(4),dp(10),dp(12));
     for(int i=0;i<ar[index].length;i++){
-      TextView a=tx(ar[index][i],25,textColor(),true);a.setTypeface(arabicFont,Typeface.BOLD);a.setGravity(Gravity.CENTER);a.setLineSpacing(dp(10),1.22f);a.setPadding(dp(4),dp(22),dp(4),dp(18));a.setBackgroundColor(Color.TRANSPARENT);body.addView(a,new LinearLayout.LayoutParams(-1,-2));
-      TextView tr=tx(fa[index][i],17,textColor(),false);tr.setTypeface(persianFont);tr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);tr.setLineSpacing(dp(7),1.18f);tr.setPadding(dp(4),dp(8),dp(4),dp(18));body.addView(tr,new LinearLayout.LayoutParams(-1,-2));
+      TextView a=tx(ar[index][i],arabicSize,textColor(),true);a.setTypeface(arabicFont,Typeface.BOLD);a.setGravity(Gravity.CENTER);a.setLineSpacing(dp(10),1.22f);a.setPadding(dp(4),dp(22),dp(4),dp(18));a.setBackgroundColor(Color.TRANSPARENT);body.addView(a,new LinearLayout.LayoutParams(-1,-2));
+      TextView tr=tx(fa[index][i],persianSize,textColor(),false);tr.setTypeface(persianFont);tr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);tr.setLineSpacing(dp(7),1.18f);tr.setPadding(dp(4),dp(8),dp(4),dp(18));body.addView(tr,new LinearLayout.LayoutParams(-1,-2));
       if(i<ar[index].length-1){View divider=new View(this);divider.setBackgroundColor(nightMode?0xff29463d:0xffded5c3);LinearLayout.LayoutParams dl=new LinearLayout.LayoutParams(dp(52),dp(1));dl.gravity=Gravity.CENTER;dl.topMargin=dp(4);dl.bottomMargin=dp(4);body.addView(divider,dl);}
     }
     scroll.addView(body);page.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
@@ -152,14 +159,24 @@ public class MainActivity extends Activity {
   }
   void scrollText(ScrollView s,TextView b){handler.postDelayed(new Runnable(){public void run(){if(!auto)return;int max=s.getChildAt(0).getHeight()-s.getHeight();if(s.getScrollY()>=max){auto=false;b.setText("حرکت خودکار");return;}s.smoothScrollBy(0,dp(2));scrollText(s,b);}},80);}
   void settings(){
-    String[] opts={"حالت روز / شب","انتخاب فونت عربی از گوشی","انتخاب فونت فارسی از گوشی","انتخاب صوت پیش‌فرض","پاک‌کردن صوت پیش‌فرض"};
+    String[] opts={"حالت روز / شب","تنظیم اندازهٔ متن عربی و فارسی","انتخاب فونت عربی از گوشی","انتخاب فونت فارسی از گوشی","انتخاب صوت پیش‌فرض","پاک‌کردن صوت پیش‌فرض"};
     new AlertDialog.Builder(this).setTitle("تنظیمات قرار دل").setItems(opts,(d,w)->{
       if(w==0)toggleTheme();
-      if(w==1)pick(PICK_ARABIC_FONT,"font/ttf");
-      if(w==2)pick(PICK_PERSIAN_FONT,"font/ttf");
-      if(w==3)pick(PICK_AUDIO,"audio/*");
-      if(w==4){defaultAudio="";savePrefs();showHome();}
+      if(w==1)textSizeSettings();
+      if(w==2)pick(PICK_ARABIC_FONT,"font/ttf");
+      if(w==3)pick(PICK_PERSIAN_FONT,"font/ttf");
+      if(w==4)pick(PICK_AUDIO,"audio/*");
+      if(w==5){defaultAudio="";savePrefs();showHome();}
     }).show();
+  }
+  void textSizeSettings(){
+    LinearLayout box=col();box.setPadding(dp(22),dp(8),dp(22),dp(4));
+    TextView arLabel=tx("اندازهٔ متن عربی: "+arabicSize,15,textColor(),true);SeekBar arBar=new SeekBar(this);arBar.setMax(30);arBar.setProgress(arabicSize-16);
+    TextView faLabel=tx("اندازهٔ متن فارسی: "+persianSize,15,textColor(),true);SeekBar faBar=new SeekBar(this);faBar.setMax(20);faBar.setProgress(persianSize-12);
+    box.addView(arLabel);box.addView(arBar);box.addView(faLabel);box.addView(faBar);
+    arBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean u){arabicSize=p+16;arLabel.setText("اندازهٔ متن عربی: "+arabicSize);}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
+    faBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean u){persianSize=p+12;faLabel.setText("اندازهٔ متن فارسی: "+persianSize);}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
+    new AlertDialog.Builder(this).setTitle("اندازهٔ نوشته‌ها").setView(box).setNegativeButton("انصراف",(d,w)->{}).setPositiveButton("ذخیره",(d,w)->{getSharedPreferences("prefs",0).edit().putInt("arabic_size",arabicSize).putInt("persian_size",persianSize).apply();if(selected>=0)read(selected);}).show();
   }
   void pick(int code,String type){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType(type);startActivityForResult(i,code);}
   @Override protected void onActivityResult(int r,int result,Intent data){super.onActivityResult(r,result,data);if(result!=RESULT_OK||data==null||data.getData()==null)return;try{Uri u=data.getData();String path=copy(u,"asset_"+System.currentTimeMillis());if(r==PICK_AUDIO){long size=size(u);if(size>30L*1024*1024){toast("حجم صوت باید حداکثر ۳۰ مگابایت باشد.");return;}defaultAudio=path;savePrefs();toast("صوت پیش‌فرض ثبت شد.");}else if(r==PICK_ARABIC_FONT){arabicFont=Typeface.createFromFile(path);getSharedPreferences("prefs",0).edit().putString("arabic_font",path).apply();toast("فونت عربی ثبت شد.");}else if(r==PICK_PERSIAN_FONT){persianFont=Typeface.createFromFile(path);getSharedPreferences("prefs",0).edit().putString("persian_font",path).apply();toast("فونت فارسی ثبت شد.");}if(selected>=0)read(selected);else showHome();}catch(Exception e){toast("فایل انتخاب‌شده قابل استفاده نیست.");}}
@@ -175,11 +192,23 @@ public class MainActivity extends Activity {
   class AmbientArt extends View{
     Paint p=new Paint(3);long start=System.currentTimeMillis();
     AmbientArt(Context c){super(c);setLayerType(View.LAYER_TYPE_SOFTWARE,null);}
-    protected void onDraw(Canvas c){super.onDraw(c);float w=getWidth(),h=getHeight();p.setShader(new LinearGradient(0,0,w,h,0xff102e29,0xff28604e,Shader.TileMode.CLAMP));c.drawRect(0,0,w,h,p);p.setShader(null);
-      p.setColor(0x20ffffff);for(int i=0;i<5;i++){float x=(float)(w*(.15+.18*i)+Math.sin((System.currentTimeMillis()-start)/1200.0+i)*dp(9));float y=h*(.22f+.13f*(i%3));c.drawCircle(x,y,dp(4+i%2),p);}
-      p.setColor(0xffd7bd86);c.drawCircle(w-dp(55),dp(55),dp(28),p);p.setColor(0xff1d5143);c.drawCircle(w-dp(42),dp(44),dp(26),p);
-      p.setColor(0xffead7a9);Path star=new Path();star.moveTo(w-dp(94),dp(32));star.lineTo(w-dp(89),dp(45));star.lineTo(w-dp(76),dp(49));star.lineTo(w-dp(89),dp(53));star.lineTo(w-dp(94),dp(66));star.lineTo(w-dp(99),dp(53));star.lineTo(w-dp(112),dp(49));star.lineTo(w-dp(99),dp(45));star.close();c.drawPath(star,p);
-      postInvalidateDelayed(60);
+    protected void onDraw(Canvas c){
+      super.onDraw(c);float w=getWidth(),h=getHeight(),cx=w*.5f,cy=h*.52f;
+      p.setShader(new LinearGradient(0,0,w,h,0xff061d18,0xff164b3b,Shader.TileMode.CLAMP));c.drawRect(0,0,w,h,p);p.setShader(null);
+      p.setShader(new RadialGradient(cx,cy,Math.max(w,h)*.72f,new int[]{0x66d9c18a,0x223fba8b,0x00000000},null,Shader.TileMode.CLAMP));c.drawRect(0,0,w,h,p);p.setShader(null);
+      p.setColor(0x33d9c18a);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(dp(1));
+      for(int i=0;i<5;i++){float r=dp(34+i*27);c.drawCircle(cx,cy,r,p);}
+      p.setColor(0x2affefc2);for(int i=0;i<8;i++){float ang=(float)(i*Math.PI/4);Path ray=new Path();ray.moveTo(cx+(float)Math.cos(ang)*dp(28),cy+(float)Math.sin(ang)*dp(28));ray.lineTo(cx+(float)Math.cos(ang)*w*.62f,cy+(float)Math.sin(ang)*h*.72f);c.drawPath(ray,p);}
+      p.setStyle(Paint.Style.FILL);
+      // Mihrab-inspired luminous arch
+      RectF arch=new RectF(cx-dp(76),cy-dp(86),cx+dp(76),h+dp(34));
+      p.setColor(0x338ed7b3);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(dp(2));c.drawRoundRect(arch,dp(76),dp(76),p);
+      Path mihrab=new Path();mihrab.moveTo(cx-dp(60),h+dp(10));mihrab.lineTo(cx-dp(60),cy-dp(12));mihrab.quadTo(cx,cy-dp(128),cx+dp(60),cy-dp(12));mihrab.lineTo(cx+dp(60),h+dp(10));c.drawPath(mihrab,p);
+      p.setStyle(Paint.Style.FILL);p.setColor(0xffd9c18a);c.drawCircle(cx,cy-dp(42),dp(4),p);
+      p.setColor(0x99e5d3a5);for(int i=0;i<18;i++){float x=(i*61%Math.max(1,(int)w)),y=(i*37%Math.max(1,(int)h));c.drawCircle(x,y,dp(1+i%2),p);}
+      p.setColor(0x6688d9b0);p.setStrokeWidth(dp(1));for(int i=0;i<7;i++){float x=(i+1)*w/8f;Path circuit=new Path();circuit.moveTo(x,0);circuit.lineTo(x,dp(24+i%3*8));circuit.lineTo(cx+(i-3)*dp(16),cy-dp(90));c.drawPath(circuit,p);c.drawCircle(x,dp(24+i%3*8),dp(2),p);}
+      p.setStyle(Paint.Style.FILL);p.setShader(new RadialGradient(cx,cy-dp(40),dp(100),new int[]{0x22fff0b8,0x00fff0b8},null,Shader.TileMode.CLAMP));c.drawCircle(cx,cy-dp(40),dp(100),p);p.setShader(null);
+      postInvalidateDelayed(100);
     }
   }
   class DigitalIcon extends View{
