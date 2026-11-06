@@ -85,7 +85,7 @@ public class MainActivity extends Activity {
     defaultAudio=p.getString("audio","");
     arabicSize=p.getInt("arabic_size",25);persianSize=p.getInt("persian_size",17);
     try{String a=p.getString("arabic_font",""),f=p.getString("persian_font","");
-      if(!a.isEmpty())arabicFont=Typeface.createFromFile(a);if(!f.isEmpty())persianFont=Typeface.createFromFile(f);\n      String all=p.getString("app_font","");if(!all.isEmpty())appFont=Typeface.createFromFile(all);
+      if(!a.isEmpty())arabicFont=Typeface.createFromFile(a);if(!f.isEmpty())persianFont=Typeface.createFromFile(f);\n      String all=p.getString("app_font","");if(!all.isEmpty()){appFont=Typeface.createFromFile(all);titleFont=appFont;}
     }catch(Exception ignored){}
     try{arabicFont=Typeface.createFromAsset(getAssets(),"fonts/FedraArabic.ttf");persianFont=arabicFont;titleFont=Typeface.createFromAsset(getAssets(),"fonts/IRAmir.ttf");}catch(Exception ignored){}
   }
